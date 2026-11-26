@@ -53,7 +53,7 @@ pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     z_array
 }
 
-pub fn find_substring_with_z_algorithm(big_string: &str, substring: &str) -> Vec<usize> {
+pub fn match_with_z_algorithm(big_string: &str, substring: &str) -> Vec<usize> {
     let mut concat_string: Vec<i32> = Vec::with_capacity(big_string.len() + 1 + substring.len());
     concat_string.extend(substring.chars().map(|ch| ch as i32));
     concat_string.push(-1i32);
