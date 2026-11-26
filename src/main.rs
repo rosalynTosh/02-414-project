@@ -1,4 +1,4 @@
-pub mod naive;
+mod naive;
 mod z_algorithm;
 mod kmp;
 mod shift_and;
