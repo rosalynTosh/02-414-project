@@ -71,25 +71,6 @@ pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     z_array
 }
 
-pub fn match_with_z_algorithm<T: Copy + Eq>(big_string: &[T], substring: &[T], safe_delim: T) -> Vec<usize> {
-    let mut concat_string: Vec<T> = Vec::with_capacity(big_string.len() + 1 + substring.len());
-    concat_string.extend(substring);
-    concat_string.push(safe_delim);
-    concat_string.extend(big_string);
-
-    let z_array = construct_z_array(&concat_string);
-
-    let mut match_indices: Vec<usize> = Vec::new();
-
-    for i in 0..big_string.len() {
-        if z_array[i + substring.len() + 1] == substring.len() {
-            match_indices.push(i);
-        }
-    }
-
-    match_indices
-}
-
 pub struct ZAlgorithmMatcher<'p, T: Eq> {
     pattern: &'p [T],
     trunc_z_array: Vec<usize>,
