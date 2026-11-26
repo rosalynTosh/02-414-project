@@ -1,3 +1,5 @@
+use crate::matcher::Matcher;
+
 pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     let size = str.len();
 
@@ -86,4 +88,70 @@ pub fn match_with_z_algorithm<T: Copy + Eq>(big_string: &[T], substring: &[T], s
     }
 
     match_indices
+}
+
+pub struct ZAlgorithmMatcher<'p, T: Eq> {
+    pattern: &'p [T],
+    trunc_z_array: Vec<usize>,
+}
+
+impl<'p, T: Eq> ZAlgorithmMatcher<'p, T> {
+    pub fn from_pattern(pattern: &'p [T]) -> ZAlgorithmMatcher<'p, T> {
+        ZAlgorithmMatcher {
+            pattern,
+            trunc_z_array: construct_z_array(pattern)[1..].to_owned(),
+        }
+    }
+}
+
+impl<'p, T: Eq> Matcher<T> for ZAlgorithmMatcher<'p, T> {
+    fn find_indices_in(&self, text: &[T]) -> Vec<usize> {
+        let mut match_indices: Vec<usize> = Vec::new();
+
+        let mut lo: usize = 0;
+        let mut hi: usize = 0;
+        'outer: for i in 0..text.len() {
+            if i < hi {
+                let offset_z = self.trunc_z_array[(i - lo) - 1];
+
+                if i + offset_z >= hi {
+                    let mut k: usize = hi - i;
+                    while k < self.pattern.len() && k < text.len() - i {
+                        if self.pattern[k] != text[k + i] {
+                            lo = i;
+                            hi = i + k;
+                            continue 'outer;
+                        }
+
+                        k += 1;
+                    }
+
+                    lo = i;
+                    hi = i + k;
+                    if k == self.pattern.len() {
+                        match_indices.push(i);
+                    }
+                }
+            } else {
+                let mut k: usize = 0;
+                while k < self.pattern.len() && k < text.len() - i {
+                    if self.pattern[k] != text[k + i] {
+                        lo = i;
+                        hi = i + k;
+                        continue 'outer;
+                    }
+
+                    k += 1;
+                }
+
+                lo = i;
+                hi = i + k;
+                if k == self.pattern.len() {
+                    match_indices.push(i);
+                }
+            }
+        }
+
+        match_indices
+    }
 }
