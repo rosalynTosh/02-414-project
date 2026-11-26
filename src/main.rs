@@ -27,4 +27,7 @@ fn main() {
 
     let kmp_spm_dog_matcher = kmp::KmpSpmMatcher::from_pattern(&dog_chars);
     dbg!(kmp_spm_dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()).collect::<Vec<_>>());
+
+    let shift_and_dog_matcher = shift_and::ShiftAndMatcher::from_pattern(&dog_chars).unwrap();
+    dbg!(shift_and_dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()).collect::<Vec<_>>());
 }
