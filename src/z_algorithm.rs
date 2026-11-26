@@ -1,6 +1,4 @@
-use std::println;
-
-pub fn construct_z_array_from_i32_string(str: &[i32]) -> Vec<usize> {
+pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     let size = str.len();
 
     let mut z_array: Vec<usize> = Vec::with_capacity(size);
@@ -17,8 +15,6 @@ pub fn construct_z_array_from_i32_string(str: &[i32]) -> Vec<usize> {
     let mut lo: usize = 1;
     let mut hi: usize = 1 + z_array[1];
     'outer: for i in 2..size {
-        println!("{} {:?}", i, z_array);
-
         if i < hi {
             let offset_z = z_array[i - lo];
 
@@ -57,13 +53,13 @@ pub fn construct_z_array_from_i32_string(str: &[i32]) -> Vec<usize> {
     z_array
 }
 
-pub fn find_substring_with_z_algorithm(big_string: &[char], substring: &[char]) -> Vec<usize> {
+pub fn find_substring_with_z_algorithm(big_string: &str, substring: &str) -> Vec<usize> {
     let mut concat_string: Vec<i32> = Vec::with_capacity(big_string.len() + 1 + substring.len());
-    concat_string.extend(substring.iter().map(|ch| *ch as i32));
+    concat_string.extend(substring.chars().map(|ch| ch as i32));
     concat_string.push(-1i32);
-    concat_string.extend(big_string.iter().map(|ch| *ch as i32));
+    concat_string.extend(big_string.chars().map(|ch| ch as i32));
 
-    let z_array = construct_z_array_from_i32_string(&concat_string);
+    let z_array = construct_z_array(&concat_string);
 
     let mut match_indices: Vec<usize> = Vec::new();
 
