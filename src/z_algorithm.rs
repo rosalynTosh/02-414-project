@@ -1,4 +1,4 @@
-use crate::matcher::Matcher;
+use crate::matcher::{HasIndexIterator, Matcher};
 
 pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     let size = str.len();
@@ -104,54 +104,82 @@ impl<'p, T: Eq> ZAlgorithmMatcher<'p, T> {
     }
 }
 
-impl<'p, T: Eq> Matcher<T> for ZAlgorithmMatcher<'p, T> {
-    fn find_indices_in(&self, text: &[T]) -> Vec<usize> {
-        let mut match_indices: Vec<usize> = Vec::new();
+pub struct ZAlgorithmIndexIterator<'p, 't, T: Eq> {
+    matcher: &'p ZAlgorithmMatcher<'p, T>,
+    text: &'t [T],
+    i: usize,
+    lo: usize,
+    hi: usize,
+}
 
-        let mut lo: usize = 0;
-        let mut hi: usize = 0;
-        'outer: for i in 0..text.len() {
-            if i < hi {
-                let offset_z = self.trunc_z_array[(i - lo) - 1];
+impl<'p, 't, T: Eq> Iterator for ZAlgorithmIndexIterator<'p, 't, T> {
+    type Item = usize;
 
-                if i + offset_z >= hi {
-                    let mut k: usize = hi - i;
-                    while k < self.pattern.len() && k < text.len() - i {
-                        if self.pattern[k] != text[k + i] {
-                            lo = i;
-                            hi = i + k;
+    fn next(&mut self) -> Option<Self::Item> {
+        'outer: while self.i < self.text.len() {
+            if self.i < self.hi {
+                let offset_z = self.matcher.trunc_z_array[(self.i - self.lo) - 1];
+
+                if self.i + offset_z >= self.hi {
+                    let mut k: usize = self.hi - self.i;
+                    while k < self.matcher.pattern.len() && k < self.text.len() - self.i {
+                        if self.matcher.pattern[k] != self.text[k + self.i] {
+                            self.lo = self.i;
+                            self.hi = self.i + k;
+                            self.i += 1;
                             continue 'outer;
                         }
 
                         k += 1;
                     }
 
-                    lo = i;
-                    hi = i + k;
-                    if k == self.pattern.len() {
-                        match_indices.push(i);
+                    self.lo = self.i;
+                    self.hi = self.i + k;
+                    self.i += 1;
+                    if k == self.matcher.pattern.len() {
+                        return Some(self.lo);
                     }
                 }
             } else {
                 let mut k: usize = 0;
-                while k < self.pattern.len() && k < text.len() - i {
-                    if self.pattern[k] != text[k + i] {
-                        lo = i;
-                        hi = i + k;
+                while k < self.matcher.pattern.len() && k < self.text.len() - self.i {
+                    if self.matcher.pattern[k] != self.text[k + self.i] {
+                        self.lo = self.i;
+                        self.hi = self.i + k;
+                        self.i += 1;
                         continue 'outer;
                     }
 
                     k += 1;
                 }
 
-                lo = i;
-                hi = i + k;
-                if k == self.pattern.len() {
-                    match_indices.push(i);
+                self.lo = self.i;
+                self.hi = self.i + k;
+                self.i += 1;
+                if k == self.matcher.pattern.len() {
+                    return Some(self.lo);
                 }
             }
+
+            self.i += 1;
         }
 
-        match_indices
+        None
+    }
+}
+
+impl<'p, T: Eq + 'p> HasIndexIterator<'p, T> for ZAlgorithmMatcher<'p, T> {
+    type IndexIterator<'t> = ZAlgorithmIndexIterator<'p, 't, T> where T: 't;
+}
+
+impl<'p, T: Eq> Matcher<'p, T> for ZAlgorithmMatcher<'p, T> {
+    fn find_indices_in<'t>(&'p self, text: &'t [T]) -> Self::IndexIterator<'t> {
+        ZAlgorithmIndexIterator {
+            matcher: self,
+            text,
+            i: 0,
+            lo: 0,
+            hi: 0,
+        }
     }
 }

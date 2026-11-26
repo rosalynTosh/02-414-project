@@ -19,5 +19,5 @@ fn main() {
 
     let dog_chars = "dog".chars().collect::<Vec<_>>();
     let dog_matcher = z_algorithm::ZAlgorithmMatcher::from_pattern(&dog_chars);
-    dbg!(dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()));
+    dbg!(dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()).collect::<Vec<_>>());
 }
