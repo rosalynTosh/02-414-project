@@ -18,6 +18,13 @@ fn main() {
     dbg!(shift_and::match_with_shift_and_64_bit(&"aacataaaac".chars().collect::<Vec<_>>(), &"aa".chars().collect::<Vec<_>>()));
 
     let dog_chars = "dog".chars().collect::<Vec<_>>();
-    let dog_matcher = z_algorithm::ZAlgorithmMatcher::from_pattern(&dog_chars);
-    dbg!(dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()).collect::<Vec<_>>());
+
+    let z_algorithm_dog_matcher = z_algorithm::ZAlgorithmMatcher::from_pattern(&dog_chars);
+    dbg!(z_algorithm_dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()).collect::<Vec<_>>());
+
+    let kmp_memo_dog_matcher = kmp::KmpMemoMatcher::from_pattern(&dog_chars);
+    dbg!(kmp_memo_dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()).collect::<Vec<_>>());
+
+    let kmp_spm_dog_matcher = kmp::KmpSpmMatcher::from_pattern(&dog_chars);
+    dbg!(kmp_spm_dog_matcher.find_indices_in(&"catsanddogsdogwooddodogdodo".chars().collect::<Vec<_>>()).collect::<Vec<_>>());
 }
