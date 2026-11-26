@@ -53,11 +53,11 @@ pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     z_array
 }
 
-pub fn match_with_z_algorithm(big_string: &str, substring: &str) -> Vec<usize> {
-    let mut concat_string: Vec<i32> = Vec::with_capacity(big_string.len() + 1 + substring.len());
-    concat_string.extend(substring.chars().map(|ch| ch as i32));
-    concat_string.push(-1i32);
-    concat_string.extend(big_string.chars().map(|ch| ch as i32));
+pub fn match_with_z_algorithm<T: Copy + Eq>(big_string: &[T], substring: &[T], safe_delim: T) -> Vec<usize> {
+    let mut concat_string: Vec<T> = Vec::with_capacity(big_string.len() + 1 + substring.len());
+    concat_string.extend(substring);
+    concat_string.push(safe_delim);
+    concat_string.extend(big_string);
 
     let z_array = construct_z_array(&concat_string);
 
