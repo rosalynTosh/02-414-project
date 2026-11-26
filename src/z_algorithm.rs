@@ -3,13 +3,29 @@ pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
 
     let mut z_array: Vec<usize> = Vec::with_capacity(size);
 
+    if size == 0 {
+        return z_array;
+    }
+
     z_array.push(size);
+
+    if size == 1 {
+        return z_array;
+    }
 
     for k in 0..(size - 1) {
         if str[k] != str[k + 1] {
             z_array.push(k);
             break;
         }
+    }
+
+    if z_array.len() == 1 {
+        z_array.push(size - 1);
+    }
+
+    if size == 2 {
+        return z_array;
     }
 
     let mut lo: usize = 1;
