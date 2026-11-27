@@ -8,7 +8,7 @@ pub trait PatternMatcher<'p, T: 'p>: Sized {
 
 #[cfg(test)]
 #[macro_export]
-macro_rules! assert_matcher_case {
+macro_rules! assert_pattern_matcher_case {
     ( $Matcher:ident, $pattern_str:expr, $text_str:expr, $indices:expr ) => {
         {
             let pattern = $pattern_str.chars().collect::<Vec<_>>();
@@ -20,6 +20,20 @@ macro_rules! assert_matcher_case {
                 }
                 None => {}
             }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! pattern_matcher_unit_tests {
+    ( $Matcher:ident ) => {
+        #[cfg(test)]
+        mod tests {
+            use super::*;
+            use crate::assert_pattern_matcher_case as assert_matcher_case;
+            use crate::matcher_unit_tests;
+
+            matcher_unit_tests!($Matcher);
         }
     }
 }

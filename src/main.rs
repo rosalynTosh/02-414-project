@@ -1,6 +1,10 @@
 mod pattern_matcher;
 mod pattern_matchers;
-mod pattern_matcher_unit_tests;
+
+mod text_matcher;
+mod text_matchers;
+
+mod matcher_unit_tests;
 
 use {pattern_matcher::PatternMatcher, pattern_matchers::naive, pattern_matchers::z_algorithm, pattern_matchers::kmp_memo, pattern_matchers::kmp_spm, pattern_matchers::shift_and};
 
