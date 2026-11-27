@@ -1,4 +1,4 @@
-use crate::{matcher::Matcher, unit_test_matcher};
+use crate::{pattern_matcher::PatternMatcher, pattern_matcher_unit_tests};
 
 pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     let size = str.len();
@@ -140,7 +140,7 @@ impl<'m, 'p, 't, T: Eq> Iterator for ZAlgorithmIndexIterator<'m, 'p, 't, T> {
     }
 }
 
-impl<'p, T: Eq> Matcher<'p, T> for ZAlgorithmMatcher<'p, T> {
+impl<'p, T: Eq> PatternMatcher<'p, T> for ZAlgorithmMatcher<'p, T> {
     type IndexIterator<'i, 't> = ZAlgorithmIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
 
     fn from_pattern(pattern: &'p [T]) -> Option<ZAlgorithmMatcher<'p, T>> {
@@ -165,4 +165,4 @@ impl<'p, T: Eq> Matcher<'p, T> for ZAlgorithmMatcher<'p, T> {
     }
 }
 
-unit_test_matcher!(ZAlgorithmMatcher);
+pattern_matcher_unit_tests!(ZAlgorithmMatcher);

@@ -1,15 +1,8 @@
-mod naive;
-mod z_algorithm;
-mod kmp_memo;
-mod kmp_spm;
-mod shift_and;
-mod matcher;
-mod unit_test_matcher;
+mod pattern_matcher;
+mod pattern_matchers;
+mod pattern_matcher_unit_tests;
 
-#[cfg(test)]
-mod matcher_tests;
-
-use matcher::Matcher;
+use {pattern_matcher::PatternMatcher, pattern_matchers::naive, pattern_matchers::z_algorithm, pattern_matchers::kmp_memo, pattern_matchers::kmp_spm, pattern_matchers::shift_and};
 
 fn main() {
     dbg!(z_algorithm::construct_z_array(&"aacataaaac".chars().collect::<Vec<_>>()));

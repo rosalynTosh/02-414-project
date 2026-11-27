@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! unit_test_matcher {
+macro_rules! pattern_matcher_unit_tests {
     ( $Matcher:ident ) => {
         #[cfg(test)]
         mod tests {

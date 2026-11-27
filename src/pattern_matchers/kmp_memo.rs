@@ -1,4 +1,4 @@
-use crate::{matcher::Matcher, unit_test_matcher};
+use crate::{pattern_matcher::PatternMatcher, pattern_matcher_unit_tests};
 
 pub struct KmpMemoMatcher<'p, T: Eq> {
     pattern: &'p [T],
@@ -38,7 +38,7 @@ impl<'m, 'p, 't, T: Eq> Iterator for KmpMemoIndexIterator<'m, 'p, 't, T> {
     }
 }
 
-impl<'p, T: Eq + 'p> Matcher<'p, T> for KmpMemoMatcher<'p, T> {
+impl<'p, T: Eq + 'p> PatternMatcher<'p, T> for KmpMemoMatcher<'p, T> {
     type IndexIterator<'i, 't> = KmpMemoIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
 
     fn from_pattern(pattern: &'p [T]) -> Option<KmpMemoMatcher<'p, T>> {
@@ -82,4 +82,4 @@ impl<'p, T: Eq + 'p> Matcher<'p, T> for KmpMemoMatcher<'p, T> {
     }
 }
 
-unit_test_matcher!(KmpMemoMatcher);
+pattern_matcher_unit_tests!(KmpMemoMatcher);

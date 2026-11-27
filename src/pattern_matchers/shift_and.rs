@@ -1,6 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::{matcher::Matcher, unit_test_matcher};
+use crate::{pattern_matcher::PatternMatcher, pattern_matcher_unit_tests};
 
 pub struct ShiftAndMatcher<'p, T: Eq + Hash + Copy> {
     pattern: &'p [T],
@@ -37,7 +37,7 @@ impl<'m, 'p, 't, T: Eq + Hash + Copy> Iterator for ShiftAndIndexIterator<'m, 'p,
     }
 }
 
-impl<'p, T: Eq + Hash + Copy> Matcher<'p, T> for ShiftAndMatcher<'p, T> {
+impl<'p, T: Eq + Hash + Copy> PatternMatcher<'p, T> for ShiftAndMatcher<'p, T> {
     type IndexIterator<'i, 't> = ShiftAndIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
 
     fn from_pattern(pattern: &'p [T]) -> Option<ShiftAndMatcher<'p, T>> {
@@ -72,4 +72,4 @@ impl<'p, T: Eq + Hash + Copy> Matcher<'p, T> for ShiftAndMatcher<'p, T> {
     }
 }
 
-unit_test_matcher!(ShiftAndMatcher);
+pattern_matcher_unit_tests!(ShiftAndMatcher);

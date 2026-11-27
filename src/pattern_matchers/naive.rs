@@ -1,4 +1,4 @@
-use crate::{matcher::Matcher, unit_test_matcher};
+use crate::{pattern_matcher::PatternMatcher, pattern_matcher_unit_tests};
 
 pub struct NaiveMatcher<'p, T: Eq> {
     pattern: &'p [T],
@@ -30,7 +30,7 @@ impl<'m, 'p, 't, T: Eq> Iterator for NaiveIndexIterator<'m, 'p, 't, T> {
     }
 }
 
-impl<'p, T: Eq> Matcher<'p, T> for NaiveMatcher<'p, T> {
+impl<'p, T: Eq> PatternMatcher<'p, T> for NaiveMatcher<'p, T> {
     type IndexIterator<'i, 't> = NaiveIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
 
     fn from_pattern(pattern: &'p [T]) -> Option<NaiveMatcher<'p, T>> {
@@ -48,4 +48,4 @@ impl<'p, T: Eq> Matcher<'p, T> for NaiveMatcher<'p, T> {
     }
 }
 
-unit_test_matcher!(NaiveMatcher);
+pattern_matcher_unit_tests!(NaiveMatcher);

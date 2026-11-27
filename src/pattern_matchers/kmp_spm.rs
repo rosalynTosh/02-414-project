@@ -1,4 +1,4 @@
-use crate::{matcher::Matcher, unit_test_matcher, z_algorithm};
+use crate::{pattern_matcher::PatternMatcher, pattern_matcher_unit_tests, pattern_matchers::z_algorithm};
 
 pub struct KmpSpmMatcher<'p, T: Eq> {
     pattern: &'p [T],
@@ -43,7 +43,7 @@ impl<'m, 'p, 't, T: Eq> Iterator for KmpSpmIndexIterator<'m, 'p, 't, T> {
     }
 }
 
-impl<'p, T: Eq + 'p> Matcher<'p, T> for KmpSpmMatcher<'p, T> {
+impl<'p, T: Eq + 'p> PatternMatcher<'p, T> for KmpSpmMatcher<'p, T> {
     type IndexIterator<'i, 't> = KmpSpmIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
 
     fn from_pattern(pattern: &'p [T]) -> Option<KmpSpmMatcher<'p, T>> {
@@ -78,4 +78,4 @@ impl<'p, T: Eq + 'p> Matcher<'p, T> for KmpSpmMatcher<'p, T> {
     }
 }
 
-unit_test_matcher!(KmpSpmMatcher);
+pattern_matcher_unit_tests!(KmpSpmMatcher);
