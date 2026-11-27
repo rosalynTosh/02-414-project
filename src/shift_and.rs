@@ -1,44 +1,20 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::matcher::{HasIndexIterator, Matcher};
+use crate::{matcher::Matcher, unit_test_matcher};
 
 pub struct ShiftAndMatcher<'p, T: Eq + Hash + Copy> {
     pattern: &'p [T],
     pattern_bitstrings: HashMap<T, u64>,
 }
 
-impl<'p, T: Eq + Hash + Copy> ShiftAndMatcher<'p, T> {
-    pub fn from_pattern(pattern: &'p [T]) -> Option<ShiftAndMatcher<'p, T>> {
-        if pattern.len() > 64 {
-            return None;
-        }
-        
-        Some(ShiftAndMatcher {
-            pattern,
-            pattern_bitstrings: {
-                let mut pattern_bitstrings: HashMap<T, u64> = HashMap::new();
-
-                for i in 0..pattern.len() {
-                    pattern_bitstrings.insert(pattern[i], match pattern_bitstrings.get(&pattern[i]) {
-                        Some(bs) => bs | (1u64 << (i as u64)),
-                        None => 1u64 << (i as u64),
-                    });
-                }
-
-                pattern_bitstrings
-            },
-        })
-    }
-}
-
-pub struct ShiftAndIndexIterator<'p, 't, T: Eq + Hash + Copy> {
-    matcher: &'p ShiftAndMatcher<'p, T>,
+pub struct ShiftAndIndexIterator<'m, 'p, 't, T: Eq + Hash + Copy> {
+    matcher: &'m ShiftAndMatcher<'p, T>,
     text: &'t [T],
     i: usize,
     curr_bitstring: u64,
 }
 
-impl<'p, 't, T: Eq + Hash + Copy> Iterator for ShiftAndIndexIterator<'p, 't, T> {
+impl<'m, 'p, 't, T: Eq + Hash + Copy> Iterator for ShiftAndIndexIterator<'m, 'p, 't, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -61,12 +37,32 @@ impl<'p, 't, T: Eq + Hash + Copy> Iterator for ShiftAndIndexIterator<'p, 't, T> 
     }
 }
 
-impl<'p, T: Eq + Hash + Copy + 'p> HasIndexIterator<'p, T> for ShiftAndMatcher<'p, T> {
-    type IndexIterator<'t> = ShiftAndIndexIterator<'p, 't, T> where T: 't;
-}
-
 impl<'p, T: Eq + Hash + Copy> Matcher<'p, T> for ShiftAndMatcher<'p, T> {
-    fn find_indices_in<'t>(&'p self, text: &'t [T]) -> Self::IndexIterator<'t> {
+    type IndexIterator<'i, 't> = ShiftAndIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
+
+    fn from_pattern(pattern: &'p [T]) -> Option<ShiftAndMatcher<'p, T>> {
+        if pattern.len() == 0 || pattern.len() > 64 {
+            return None;
+        }
+        
+        Some(ShiftAndMatcher {
+            pattern,
+            pattern_bitstrings: {
+                let mut pattern_bitstrings: HashMap<T, u64> = HashMap::new();
+
+                for i in 0..pattern.len() {
+                    pattern_bitstrings.insert(pattern[i], match pattern_bitstrings.get(&pattern[i]) {
+                        Some(bs) => bs | (1u64 << (i as u64)),
+                        None => 1u64 << (i as u64),
+                    });
+                }
+
+                pattern_bitstrings
+            },
+        })
+    }
+
+    fn find_indices_in<'i, 't>(&'i self, text: &'t [T]) -> Self::IndexIterator<'i, 't> {
         ShiftAndIndexIterator {
             matcher: self,
             text,
@@ -75,3 +71,5 @@ impl<'p, T: Eq + Hash + Copy> Matcher<'p, T> for ShiftAndMatcher<'p, T> {
         }
     }
 }
+
+unit_test_matcher!(ShiftAndMatcher);

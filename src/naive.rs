@@ -1,28 +1,20 @@
-use crate::matcher::{HasIndexIterator, Matcher};
+use crate::{matcher::Matcher, unit_test_matcher};
 
 pub struct NaiveMatcher<'p, T: Eq> {
     pattern: &'p [T],
 }
 
-impl<'p, T: Eq> NaiveMatcher<'p, T> {
-    pub fn from_pattern(pattern: &'p [T]) -> NaiveMatcher<'p, T> {
-        NaiveMatcher {
-            pattern,
-        }
-    }
-}
-
-pub struct NaiveIndexIterator<'p, 't, T: Eq> {
-    matcher: &'p NaiveMatcher<'p, T>,
+pub struct NaiveIndexIterator<'m, 'p, 't, T: Eq> {
+    matcher: &'m NaiveMatcher<'p, T>,
     text: &'t [T],
     i: usize,
 }
 
-impl<'p, 't, T: Eq> Iterator for NaiveIndexIterator<'p, 't, T> {
+impl<'m, 'p, 't, T: Eq> Iterator for NaiveIndexIterator<'m, 'p, 't, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        'outer: while self.i < ((self.text.len() + 1) - self.matcher.pattern.len()) {
+        'outer: while self.i + self.matcher.pattern.len() < self.text.len() + 1 {
             for k in 0..self.matcher.pattern.len() {
                 if self.text[self.i + k] != self.matcher.pattern[k] {
                     self.i += 1;
@@ -38,12 +30,16 @@ impl<'p, 't, T: Eq> Iterator for NaiveIndexIterator<'p, 't, T> {
     }
 }
 
-impl<'p, T: Eq + 'p> HasIndexIterator<'p, T> for NaiveMatcher<'p, T> {
-    type IndexIterator<'t> = NaiveIndexIterator<'p, 't, T> where T: 't;
-}
-
 impl<'p, T: Eq> Matcher<'p, T> for NaiveMatcher<'p, T> {
-    fn find_indices_in<'t>(&'p self, text: &'t [T]) -> Self::IndexIterator<'t> {
+    type IndexIterator<'i, 't> = NaiveIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
+
+    fn from_pattern(pattern: &'p [T]) -> Option<NaiveMatcher<'p, T>> {
+        Some(NaiveMatcher {
+            pattern,
+        })
+    }
+
+    fn find_indices_in<'i, 't>(&'i self, text: &'t [T]) -> Self::IndexIterator<'i, 't> {
         NaiveIndexIterator {
             matcher: self,
             text,
@@ -51,3 +47,5 @@ impl<'p, T: Eq> Matcher<'p, T> for NaiveMatcher<'p, T> {
         }
     }
 }
+
+unit_test_matcher!(NaiveMatcher);

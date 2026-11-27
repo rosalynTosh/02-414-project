@@ -1,4 +1,4 @@
-use crate::matcher::{HasIndexIterator, Matcher};
+use crate::{matcher::Matcher, unit_test_matcher};
 
 pub fn construct_z_array<T: Eq>(str: &[T]) -> Vec<usize> {
     let size = str.len();
@@ -76,24 +76,15 @@ pub struct ZAlgorithmMatcher<'p, T: Eq> {
     trunc_z_array: Vec<usize>,
 }
 
-impl<'p, T: Eq> ZAlgorithmMatcher<'p, T> {
-    pub fn from_pattern(pattern: &'p [T]) -> ZAlgorithmMatcher<'p, T> {
-        ZAlgorithmMatcher {
-            pattern,
-            trunc_z_array: construct_z_array(pattern)[1..].to_owned(),
-        }
-    }
-}
-
-pub struct ZAlgorithmIndexIterator<'p, 't, T: Eq> {
-    matcher: &'p ZAlgorithmMatcher<'p, T>,
+pub struct ZAlgorithmIndexIterator<'m, 'p, 't, T: Eq> {
+    matcher: &'m ZAlgorithmMatcher<'p, T>,
     text: &'t [T],
     i: usize,
     lo: usize,
     hi: usize,
 }
 
-impl<'p, 't, T: Eq> Iterator for ZAlgorithmIndexIterator<'p, 't, T> {
+impl<'m, 'p, 't, T: Eq> Iterator for ZAlgorithmIndexIterator<'m, 'p, 't, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -149,12 +140,21 @@ impl<'p, 't, T: Eq> Iterator for ZAlgorithmIndexIterator<'p, 't, T> {
     }
 }
 
-impl<'p, T: Eq + 'p> HasIndexIterator<'p, T> for ZAlgorithmMatcher<'p, T> {
-    type IndexIterator<'t> = ZAlgorithmIndexIterator<'p, 't, T> where T: 't;
-}
-
 impl<'p, T: Eq> Matcher<'p, T> for ZAlgorithmMatcher<'p, T> {
-    fn find_indices_in<'t>(&'p self, text: &'t [T]) -> Self::IndexIterator<'t> {
+    type IndexIterator<'i, 't> = ZAlgorithmIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 't;
+
+    fn from_pattern(pattern: &'p [T]) -> Option<ZAlgorithmMatcher<'p, T>> {
+        if pattern.len() == 0 {
+            return None;
+        }
+
+        Some(ZAlgorithmMatcher {
+            pattern,
+            trunc_z_array: construct_z_array(pattern)[1..].to_owned(),
+        })
+    }
+
+    fn find_indices_in<'i, 't>(&'i self, text: &'t [T]) -> Self::IndexIterator<'i, 't> {
         ZAlgorithmIndexIterator {
             matcher: self,
             text,
@@ -164,3 +164,5 @@ impl<'p, T: Eq> Matcher<'p, T> for ZAlgorithmMatcher<'p, T> {
         }
     }
 }
+
+unit_test_matcher!(ZAlgorithmMatcher);
