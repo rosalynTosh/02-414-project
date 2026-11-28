@@ -1,33 +1,110 @@
-use std::cmp::Ordering::{Equal, Greater, Less};
+use std::{cmp::Ordering::{Equal, Greater, Less}, collections::HashMap, hash::Hash, unreachable};
 
 use crate::{text_matcher::TextMatcher, text_matcher_unit_tests};
 
-pub struct SuffixTreeChild {
+pub struct STChild<T: Eq + Hash + Copy> {
     slice: (usize, usize),
-    subtree: SuffixTree,
+    subtree: SuffixTree<T>,
 }
 
-pub enum SuffixTree {
+pub enum SuffixTree<T: Eq + Hash + Copy> {
     InternalNode {
-        children: Vec<SuffixTreeChild>, // todo: replace with HashMap from first char to STChild
+        children: HashMap<T, STChild<T>>,
     },
     LeafNode {
         suffix_index: usize,
     },
 }
 
-pub fn construct_suffix_tree<T: Eq + Ord>(text: &[T]) -> SuffixTree {
-    SuffixTree::LeafNode { suffix_index: 0 } // TODO
+struct PSTChild<'m, T: Eq + Hash + Copy> {
+    slice: (usize, Option<usize>),
+    subtree: PartialSuffixTree<'m, T>,
 }
 
-pub struct SuffixTreeMatcher<'t, T: Eq> {
+struct PSTInternalNode<'m, T: Eq + Hash + Copy> {
+    children: HashMap<T, PSTChild<'m, T>>,
+    suffix_link: Option<&'m PartialSuffixTree<'m, T>>,
+}
+
+enum PartialSuffixTree<'m, T: Eq + Hash + Copy> {
+    InternalNode(PSTInternalNode<'m, T>),
+    LeafNode {
+        suffix_index: usize,
+        suffix_link: Option<&'m PartialSuffixTree<'m, T>>
+    }
+}
+
+pub fn construct_suffix_tree<T: Eq + Hash + Copy>(text: &[T]) -> SuffixTree<T> {
+    let init_child_node = PartialSuffixTree::LeafNode {
+        suffix_index: 0,
+        suffix_link: None
+    };
+
+    let mut init_root_node_children = HashMap::new();
+    init_root_node_children.insert(text[0], PSTChild {
+        slice: (0, None),
+        subtree: init_child_node,
+    });
+
+    let mut init_root_internal_node = PSTInternalNode {
+        children: init_root_node_children,
+        suffix_link: None,
+    };
+    init_root_internal_node.suffix_link = Some(&init_child_node);
+
+    let mut suffix_tree_uc = PartialSuffixTree::InternalNode(init_root_internal_node);
+    let mut last_phase_finish_node: &PartialSuffixTree<T> = &init_child_node;
+    let mut last_phase_finish_child_offset: Option<(&PSTChild<T>, usize)> = None;
+
+    'phases: for (i, ch) in text.iter().enumerate() {
+        match (last_phase_finish_node, last_phase_finish_child_offset) {
+            (PartialSuffixTree::InternalNode(PSTInternalNode { children, suffix_link }), None) => {
+                if children.contains_key(ch) {
+                    // Case C
+
+                    continue 'phases;
+                } else {
+                    // Case B
+
+                    // children.insert(*ch, PSTChild {
+                    //     slice: (i, None),
+                    //     subtree: PartialSuffixTree::LeafNode {
+                    //         suffix_index: i,
+                    //         suffix_link: (),
+                    //     },
+                    // });
+
+                    todo!();
+                }
+            }
+            (PartialSuffixTree::InternalNode(PSTInternalNode { children, suffix_link }), Some((child, offset))) => {
+                if &text[child.slice.0 + offset] == ch {
+                    // Case D
+
+                    continue 'phases;
+                } else {
+                    // Case E
+
+                    todo!();
+                }
+            }
+            (PartialSuffixTree::LeafNode { suffix_index, suffix_link }, _) => {
+                unreachable!();
+            }
+        }
+    }
+
+    SuffixTree::LeafNode { suffix_index: 0 }
+}
+
+pub struct SuffixTreeMatcher<'t, T: Eq + Hash + Copy> {
     text: &'t [T],
-    suffix_tree: SuffixTree,
+    suffix_tree: SuffixTree<T>,
 }
 
-enum SuffixTreeTraversalState<'m> {
+enum SuffixTreeTraversalState<'m, T: Eq + Hash + Copy> {
     InternalNode {
-        children: &'m Vec<SuffixTreeChild>,
+        children: Vec<&'m STChild<T>>,
         i: usize,
     },
     LeafNode {
@@ -35,13 +112,13 @@ enum SuffixTreeTraversalState<'m> {
     },
 }
 
-pub struct SuffixTreeIndexIterator<'m, 'p, 't, T: Eq> {
+pub struct SuffixTreeIndexIterator<'m, 'p, 't, T: Eq + Hash + Copy> {
     matcher: &'m SuffixTreeMatcher<'t, T>,
     pattern: &'p [T],
-    traversal_stack: Vec<SuffixTreeTraversalState<'m>>,
+    traversal_stack: Vec<SuffixTreeTraversalState<'m, T>>,
 }
 
-impl<'m, 'p, 't, T: Eq + Ord> Iterator for SuffixTreeIndexIterator<'m, 'p, 't, T> {
+impl<'m, 'p, 't, T: Eq + Hash + Copy> Iterator for SuffixTreeIndexIterator<'m, 'p, 't, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -51,11 +128,20 @@ impl<'m, 'p, 't, T: Eq + Ord> Iterator for SuffixTreeIndexIterator<'m, 'p, 't, T
                     if i < children.len() {
                         match &children[i].subtree {
                             SuffixTree::InternalNode { children: subchildren } => {
-                                self.traversal_stack.push(SuffixTreeTraversalState::InternalNode { children, i: i + 1 });
-                                self.traversal_stack.push(SuffixTreeTraversalState::InternalNode { children: subchildren, i: 0 });
+                                self.traversal_stack.push(SuffixTreeTraversalState::InternalNode {
+                                    children,
+                                    i: i + 1,
+                                });
+                                self.traversal_stack.push(SuffixTreeTraversalState::InternalNode {
+                                    children: subchildren.values().collect::<Vec<_>>(),
+                                    i: 0,
+                                });
                             }
                             SuffixTree::LeafNode { suffix_index } => {
-                                self.traversal_stack.push(SuffixTreeTraversalState::InternalNode { children, i: i + 1 });
+                                self.traversal_stack.push(SuffixTreeTraversalState::InternalNode {
+                                    children,
+                                    i: i + 1,
+                                });
 
                                 return Some(*suffix_index);
                             }
@@ -73,7 +159,7 @@ impl<'m, 'p, 't, T: Eq + Ord> Iterator for SuffixTreeIndexIterator<'m, 'p, 't, T
     }
 }
 
-impl<'t, T: Eq + Ord> TextMatcher<'t, T> for SuffixTreeMatcher<'t, T> {
+impl<'t, T: Eq + Hash + Copy> TextMatcher<'t, T> for SuffixTreeMatcher<'t, T> {
     type IndexIterator<'i, 'p> = SuffixTreeIndexIterator<'i, 'p, 't, T> where Self: 'i, T: 'p;
 
     fn from_text(text: &'t [T]) -> Option<SuffixTreeMatcher<'t, T>> {
@@ -84,75 +170,69 @@ impl<'t, T: Eq + Ord> TextMatcher<'t, T> for SuffixTreeMatcher<'t, T> {
     }
 
     fn find_indices_of<'i, 'p>(&'i self, pattern: &'p [T]) -> Self::IndexIterator<'i, 'p> {
-        let mut suffix_tree: &SuffixTree = &self.suffix_tree;
+        let mut suffix_tree: &SuffixTree<T> = &self.suffix_tree;
         let mut p: usize = 0;
 
         loop {
             match suffix_tree {
                 SuffixTree::InternalNode { children } => {
-                    let mut lo: usize = 0;
-                    let mut hi: usize = children.len();
+                    match children.get(&pattern[p]) {
+                        Some(child) => {
+                            let child_slice_size = child.slice.1 - child.slice.0;
+                            let pattern_suffix_size = pattern.len() - p;
 
-                    while lo < hi {
-                        let mid: usize = (lo + hi) / 2;
-                        let child = &children[mid];
-
-                        match Ord::cmp(&self.text[child.slice.0], &pattern[p]) {
-                            Less => {
-                                lo = mid + 1;
-                            }
-                            Equal => {
-                                let child_slice_size = child.slice.1 - child.slice.0;
-                                let pattern_suffix_size = pattern.len() - p;
-                                match Ord::cmp(&child_slice_size, &pattern_suffix_size) {
-                                    Less | Equal => {
-                                        for i in 1..child_slice_size {
-                                            if self.text[child.slice.0 + i] != pattern[p + i] {
-                                                // No matches
-                                                return SuffixTreeIndexIterator {
-                                                    matcher: self,
-                                                    pattern,
-                                                    traversal_stack: vec![],
-                                                };
-                                            }
+                            match Ord::cmp(&child_slice_size, &pattern_suffix_size) {
+                                Less | Equal => {
+                                    for i in 1..child_slice_size {
+                                        if self.text[child.slice.0 + i] != pattern[p + i] {
+                                            // No matches
+                                            return SuffixTreeIndexIterator {
+                                                matcher: self,
+                                                pattern,
+                                                traversal_stack: vec![],
+                                            };
                                         }
-
-                                        suffix_tree = &child.subtree;
-                                        p += child_slice_size;
-                                        break;
                                     }
-                                    Greater => {
-                                        for i in 1..pattern_suffix_size {
-                                            if self.text[children[mid].slice.0 + i] != pattern[p + i] {
-                                                // No matches
-                                                return SuffixTreeIndexIterator {
-                                                    matcher: self,
-                                                    pattern,
-                                                    traversal_stack: vec![],
-                                                };
-                                            }
+
+                                    suffix_tree = &child.subtree;
+                                    p += child_slice_size;
+                                }
+                                Greater => {
+                                    for i in 1..pattern_suffix_size {
+                                        if self.text[child.slice.0 + i] != pattern[p + i] {
+                                            // No matches
+                                            return SuffixTreeIndexIterator {
+                                                matcher: self,
+                                                pattern,
+                                                traversal_stack: vec![],
+                                            };
                                         }
-
-                                        // Matches
-                                        return SuffixTreeIndexIterator {
-                                            matcher: self,
-                                            pattern,
-                                            traversal_stack: vec![match &child.subtree {
-                                                SuffixTree::InternalNode { children } => SuffixTreeTraversalState::InternalNode {
-                                                    children,
-                                                    i: 0,
-                                                },
-                                                SuffixTree::LeafNode { suffix_index } => SuffixTreeTraversalState::LeafNode {
-                                                    suffix_index: *suffix_index
-                                                }
-                                            }],
-                                        };
                                     }
+
+                                    // Matches
+                                    return SuffixTreeIndexIterator {
+                                        matcher: self,
+                                        pattern,
+                                        traversal_stack: vec![match &child.subtree {
+                                            SuffixTree::InternalNode { children } => SuffixTreeTraversalState::InternalNode {
+                                                children: children.values().collect::<Vec<_>>(),
+                                                i: 0,
+                                            },
+                                            SuffixTree::LeafNode { suffix_index } => SuffixTreeTraversalState::LeafNode {
+                                                suffix_index: *suffix_index
+                                            }
+                                        }],
+                                    };
                                 }
                             }
-                            Greater => {
-                                hi = mid;
-                            }
+                        }
+                        None => {
+                            // No matches
+                            return SuffixTreeIndexIterator {
+                                matcher: self,
+                                pattern,
+                                traversal_stack: vec![],
+                            };
                         }
                     }
                 }
